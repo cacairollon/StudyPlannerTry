@@ -1,6 +1,6 @@
 class Todo {
-  final int id;
-  final int taskId;
+  final String id;
+  final String taskId;
   final String title;
   final int isDone;
   Todo({this.id, this.taskId, this.title, this.isDone});
