@@ -40,6 +40,7 @@ class SignInScreenState extends State<SignInScreen> {
 
       if (loginRes.errMsg == null) {
         Provider.of<AuthModel>(context, listen: false).login(loginRes.token);
+        
         Navigator.pushNamedAndRemoveUntil(
             context, 'Home', (Route<dynamic> route) => false);
       } else {

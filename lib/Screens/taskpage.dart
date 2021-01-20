@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:StudyPlanner/database_helper.dart';
+import 'package:provider/provider.dart';
+import 'models/authmodel.dart';
 import 'models/task.dart';
 import 'models/todo.dart';
 import 'package:StudyPlanner/widgets.dart';
@@ -17,7 +19,7 @@ class Taskpage extends StatefulWidget {
 class _TaskpageState extends State<Taskpage> {
   DatabaseHelper _dbHelper = DatabaseHelper();
 
-  int _taskId = 0;
+  String _taskId = "";
   String _taskTitle = "";
   String _taskDescription = "";
 
@@ -91,16 +93,21 @@ class _TaskpageState extends State<Taskpage> {
                               if (value != "") {
                                 // Check if the task is null
                                 if (widget.task == null) {
+                                  print(widget.task);
                                   Task _newTask = Task(title: value);
-                                  _taskId =
-                                      await _dbHelper.insertTask(_newTask);
+                                  // _taskId =
+                                  // await _dbHelper.insertTask(Provider.of<AuthModel>(context, listen: false).token,_newTask);
                                   setState(() {
                                     _contentVisile = true;
                                     _taskTitle = value;
                                   });
                                 } else {
                                   await _dbHelper.updateTaskTitle(
-                                      _taskId, value);
+                                      Provider.of<AuthModel>(context,
+                                              listen: false)
+                                          .token,
+                                      _taskId,
+                                      value);
                                   print("Task Updated");
                                 }
                                 _descriptionFocus.requestFocus();
@@ -132,11 +139,14 @@ class _TaskpageState extends State<Taskpage> {
                         focusNode: _descriptionFocus,
                         onSubmitted: (value) async {
                           if (value != "") {
-                            if (_taskId != 0) {
-                              await _dbHelper.updateTaskDescription(
-                                  _taskId, value);
-                              _taskDescription = value;
-                            }
+                            // if (_taskId != 0) {
+                            await _dbHelper.updateTaskDescription(
+                                Provider.of<AuthModel>(context, listen: false)
+                                    .token,
+                                _taskId,
+                                value);
+                            _taskDescription = value;
+                            // }
                           }
                           _todoFocus.requestFocus();
                         },
@@ -156,33 +166,47 @@ class _TaskpageState extends State<Taskpage> {
                     visible: _contentVisile,
                     child: FutureBuilder(
                       initialData: [],
-                      future: _dbHelper.getTodo(_taskId),
+                      future: _dbHelper.getTodo(
+                          Provider.of<AuthModel>(context, listen: false).token,
+                          _taskId),
                       builder: (context, snapshot) {
-                        return Expanded(
-                          child: ListView.builder(
-                            itemCount: snapshot.data.length,
-                            itemBuilder: (context, index) {
-                              return GestureDetector(
-                                onTap: () async {
-                                  if (snapshot.data[index].isDone == 0) {
-                                    await _dbHelper.updateTodoDone(
-                                        snapshot.data[index].id, 1);
-                                  } else {
-                                    await _dbHelper.updateTodoDone(
-                                        snapshot.data[index].id, 0);
-                                  }
-                                  setState(() {});
-                                },
-                                child: TodoWidget(
-                                  text: snapshot.data[index].title,
-                                  isDone: snapshot.data[index].isDone == 0
-                                      ? false
-                                      : true,
-                                ),
-                              );
-                            },
-                          ),
-                        );
+                        if (snapshot.hasData) {
+                          return Expanded(
+                            child: ListView.builder(
+                              itemCount: snapshot.data.length,
+                              itemBuilder: (context, index) {
+                                return GestureDetector(
+                                  onTap: () async {
+                                    if (snapshot.data[index].isDone == 0) {
+                                      await _dbHelper.updateTodoDone(
+                                          Provider.of<AuthModel>(context,
+                                                  listen: false)
+                                              .token,
+                                          snapshot.data[index].id,
+                                          1);
+                                    } else {
+                                      await _dbHelper.updateTodoDone(
+                                          Provider.of<AuthModel>(context,
+                                                  listen: false)
+                                              .token,
+                                          snapshot.data[index].id,
+                                          0);
+                                    }
+                                    setState(() {});
+                                  },
+                                  child: TodoWidget(
+                                    text: snapshot.data[index].title,
+                                    isDone: snapshot.data[index].isDone == 0
+                                        ? false
+                                        : true,
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        } else {
+                          return SizedBox();
+                        }
                       },
                     ),
                   ),
@@ -216,14 +240,19 @@ class _TaskpageState extends State<Taskpage> {
                               onSubmitted: (value) async {
                                 // Check if the field is not empty
                                 if (value != "") {
-                                  if (_taskId != 0) {
+                                  if (_taskId != "") {
                                     DatabaseHelper _dbHelper = DatabaseHelper();
                                     Todo _newTodo = Todo(
                                       title: value,
                                       isDone: 0,
                                       taskId: _taskId,
                                     );
-                                    await _dbHelper.insertTodo(_newTodo);
+
+                                    await _dbHelper.insertTodo(
+                                        Provider.of<AuthModel>(context,
+                                                listen: false).token,
+                                        _newTodo);
+                                        
                                     setState(() {});
                                     _todoFocus.requestFocus();
                                   } else {
@@ -250,8 +279,11 @@ class _TaskpageState extends State<Taskpage> {
                   right: 24.0,
                   child: GestureDetector(
                     onTap: () async {
-                      if (_taskId != 0) {
-                        await _dbHelper.deleteTask(_taskId);
+                      if (_taskId != "") {
+                        await _dbHelper.deleteTask(
+                            Provider.of<AuthModel>(context, listen: false)
+                                .token,
+                            _taskId);
                         Navigator.pop(context);
                       }
                     },

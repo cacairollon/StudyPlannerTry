@@ -1,3 +1,4 @@
+import 'package:StudyPlanner/Screens/models/task.dart';
 import 'package:StudyPlanner/Screens/signinpage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -21,6 +22,9 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!Provider.of<AuthModel>(context, listen: false).isLoggedIn) {
       return SignInPage();
     }
+
+    var token = Provider.of<AuthModel>(context, listen: false).token;
+
     return Scaffold(
       appBar: AppBar(
         title: Center(
@@ -47,8 +51,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   Expanded(
                     child: FutureBuilder(
                       initialData: [],
-                      future: _dbHelper.getTasks(),
+                      future: _dbHelper.getTasks(token),
                       builder: (context, snapshot) {
+                        if(snapshot.hasData){
                         return ScrollConfiguration(
                           behavior: NoGlowBehaviour(),
                           child: ListView.builder(
@@ -60,7 +65,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) => Taskpage(
-                                        task: snapshot.data[index],
+                                        task: snapshot.data[index]
                                       ),
                                     ),
                                   ).then(
@@ -77,6 +82,10 @@ class _HomeScreenState extends State<HomeScreen> {
                             },
                           ),
                         );
+                        }
+                        else{
+                          return SizedBox();
+                        }
                       },
                     ),
                   )

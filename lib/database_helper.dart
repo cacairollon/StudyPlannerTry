@@ -1,85 +1,151 @@
+import 'package:StudyPlanner/Screens/services/taskservice.dart';
+import 'package:StudyPlanner/Screens/services/todoservice.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'Screens/models/task.dart';
 import 'Screens/models/todo.dart';
 
 class DatabaseHelper {
-  Future<Database> database() async {
-    return openDatabase(
-      join(await getDatabasesPath(), 'todo.db'),
-      onCreate: (db, version) async {
-        await db.execute(
-            "CREATE TABLE tasks(id INTEGER PRIMARY KEY, title TEXT, description TEXT)");
-        await db.execute(
-            "CREATE TABLE todo(id INTEGER PRIMARY KEY, taskId INTEGER, title TEXT, isDone INTEGER)");
+  // Future<Database> database() async {
+  //   return openDatabase(
+  //     join(await getDatabasesPath(), 'todo.db'),
+  //     onCreate: (db, version) async {
+  //       await db.execute(
+  //           "CREATE TABLE tasks(id INTEGER PRIMARY KEY, title TEXT, description TEXT)");
+  //       await db.execute(
+  //           "CREATE TABLE todo(id INTEGER PRIMARY KEY, taskId INTEGER, title TEXT, isDone INTEGER)");
 
-        return db;
-      },
-      version: 1,
-    );
-  }
+  //       return db;
+  //     },
+  //     version: 1,
+  //   );
+  // }
 
-  Future<int> insertTask(Task task) async {
-    int taskId = 0;
-    Database _db = await database();
-    await _db
-        .insert('tasks', task.toMap(),
-            conflictAlgorithm: ConflictAlgorithm.replace)
-        .then((value) {
-      taskId = value;
-    });
+  // Future<int> insertTask(Task task) async {
+  //   int taskId = 0;
+  //   Database _db = await database();
+  //   await _db
+  //       .insert('tasks', task.toMap(),
+  //           conflictAlgorithm: ConflictAlgorithm.replace)
+  //       .then((value) {
+  //     taskId = value;
+  //   });
+  //   return taskId;
+  // }
+
+  // Future<void> updateTaskTitle(int id, String title) async {
+  //   Database _db = await database();
+  //   await _db.rawUpdate("UPDATE tasks SET title = '$title' WHERE id = '$id'");
+  // }
+
+  // Future<void> updateTaskDescription(int id, String description) async {
+  //   Database _db = await database();
+  //   await _db.rawUpdate(
+  //       "UPDATE tasks SET description = '$description' WHERE id = '$id'");
+  // }
+
+  // Future<void> insertTodo(Todo todo) async {
+  //   Database _db = await database();
+  //   await _db.insert('todo', todo.toMap(),
+  //       conflictAlgorithm: ConflictAlgorithm.replace);
+  // }
+
+  // Future<List<Task>> getTasks() async {
+  //   Database _db = await database();
+  //   List<Map<String, dynamic>> taskMap = await _db.query('tasks');
+  //   return List.generate(taskMap.length, (index) {
+  //     return Task(
+  //         id: taskMap[index]['id'],
+  //         title: taskMap[index]['title'],
+  //         description: taskMap[index]['description']);
+  //   });
+  // }
+
+  // Future<List<Todo>> getTodo(int taskId) async {
+  //   Database _db = await database();
+  //   List<Map<String, dynamic>> todoMap =
+  //       await _db.rawQuery("SELECT * FROM todo WHERE taskId = $taskId");
+  //   return List.generate(todoMap.length, (index) {
+  //     return Todo(
+  //         id: todoMap[index]['id'],
+  //         title: todoMap[index]['title'],
+  //         taskId: todoMap[index]['taskId'],
+  //         isDone: todoMap[index]['isDone']);
+  //   });
+  // }
+
+  // Future<void> updateTodoDone(int id, int isDone) async {
+  //   Database _db = await database();
+  //   await _db.rawUpdate("UPDATE todo SET isDone = '$isDone' WHERE id = '$id'");
+  // }
+
+  // Future<void> deleteTask(int id) async {
+  //   Database _db = await database();
+  //   await _db.rawDelete("DELETE FROM tasks WHERE id = '$id'");
+  //   await _db.rawDelete("DELETE FROM todo WHERE taskId = '$id'");
+  // }
+
+  // Converted functions
+  Future<String> insertTask(token, Task task) async {
+    var taskData = await newTask(token, {"task": task, "description": ""});
+    var taskId = taskData.task['id'];
     return taskId;
   }
 
-  Future<void> updateTaskTitle(int id, String title) async {
-    Database _db = await database();
-    await _db.rawUpdate("UPDATE tasks SET title = '$title' WHERE id = '$id'");
+  Future<void> updateTaskTitle(token, String id, String title) async {
+    var taskData = await editTask(token, id, {"title": title});
   }
 
-  Future<void> updateTaskDescription(int id, String description) async {
-    Database _db = await database();
-    await _db.rawUpdate(
-        "UPDATE tasks SET description = '$description' WHERE id = '$id'");
+  Future<void> updateTaskDescription(
+      token, String id, String description) async {
+    var taskData = await editTask(token, id, {"description": description});
   }
 
-  Future<void> insertTodo(Todo todo) async {
-    Database _db = await database();
-    await _db.insert('todo', todo.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+  Future<void> insertTodo(token, Todo todo) async {
+    var t = todo.toMap();
+    var taskId = t['taskId'];
+    var title = t['title'];
+    var isDone = t['isDone'];
+
+    print(isDone.runtimeType);
+    var todoData = await newTodo(token,
+        {"task_id": taskId,
+        "title": title,
+        "isDone": isDone});
+
+    // var todoId = todoData.todo['id'];
   }
 
-  Future<List<Task>> getTasks() async {
-    Database _db = await database();
-    List<Map<String, dynamic>> taskMap = await _db.query('tasks');
-    return List.generate(taskMap.length, (index) {
+  Future<List<Task>> getTasks(token) async {
+    var tasks = await getAllTasks(token);
+
+    return List.generate(tasks.data.length, (index) {
       return Task(
-          id: taskMap[index]['id'],
-          title: taskMap[index]['title'],
-          description: taskMap[index]['description']);
+          id: tasks.data[index]['id'],
+          title: tasks.data[index]['title'],
+          description: tasks.data[index]['description']);
     });
   }
 
-  Future<List<Todo>> getTodo(int taskId) async {
-    Database _db = await database();
-    List<Map<String, dynamic>> todoMap =
-        await _db.rawQuery("SELECT * FROM todo WHERE taskId = $taskId");
-    return List.generate(todoMap.length, (index) {
-      return Todo(
-          id: todoMap[index]['id'],
-          title: todoMap[index]['title'],
-          taskId: todoMap[index]['taskId'],
-          isDone: todoMap[index]['isDone']);
-    });
+  Future<List<Todo>> getTodo(token, String taskId) async {
+    if(taskId != ""){
+      var todos = await taskTodos(token, taskId);
+
+      return List.generate(todos.data.length, (index) {
+        return Todo(
+            id: todos.data[index]['id'],
+            title: todos.data[index]['title'],
+            taskId: todos.data[index]['task_id'],
+            isDone: todos.data[index]['isDone']);
+      });
+    }else{return [];}
   }
 
-  Future<void> updateTodoDone(int id, int isDone) async {
-    Database _db = await database();
-    await _db.rawUpdate("UPDATE todo SET isDone = '$isDone' WHERE id = '$id'");
+  Future<void> updateTodoDone(token, String id, int isDone) async {
+    var todoData = await editTodo(token, id, {"isDone": isDone});
   }
 
-  Future<void> deleteTask(int id) async {
-    Database _db = await database();
-    await _db.rawDelete("DELETE FROM tasks WHERE id = '$id'");
-    await _db.rawDelete("DELETE FROM todo WHERE taskId = '$id'");
+  Future<void> deleteTask(token, String id) async {
+    var taskData = await deleteThisTask(token, id);
   }
 }

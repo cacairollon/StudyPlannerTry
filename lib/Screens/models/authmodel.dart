@@ -15,7 +15,7 @@ class AuthModel extends ChangeNotifier {
     _user = user;
     //notifyListeners();
   }
-
+  
   void logout() {
     _isLoggedIn = false;
     _token = "";
